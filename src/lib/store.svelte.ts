@@ -14,7 +14,7 @@ export function createStore() {
     let intervalId: ReturnType<typeof setInterval>;
 
     function cleanupItem(item: DropPayload) {
-        if (item.item_type === 'file' || item.item_type === 'image' || item.item_type === 'zip' || item.item_type === 'qr') {
+        if (typeof window !== 'undefined' && (item.item_type === 'file' || item.item_type === 'image' || item.item_type === 'zip' || item.item_type === 'qr')) {
             invoke('cleanup_temp_file', { path: item.content }).catch(console.error);
         }
     }
