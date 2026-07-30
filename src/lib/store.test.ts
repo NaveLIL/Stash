@@ -1,25 +1,37 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { store } from './store.svelte';
 
 describe('Store', () => {
     beforeEach(() => {
         // Clear store before each test
-        store.items.forEach(item => store.remove(item.id));
+        store.clearAll();
     });
 
-    it('should add an item', () => {
+    afterAll(() => {
+        // Clean up interval
+        store.destroy();
+    });
+
+    it('should add an item and unshift it to the top', () => {
         store.add({
             id: '123',
             item_type: 'file',
             content: 'C:\\test.txt',
             preview_path: 'C:\\test.txt'
         });
+        store.add({
+            id: '124',
+            item_type: 'text',
+            content: 'hello',
+            preview_path: null
+        });
 
-        expect(store.items.length).toBe(1);
-        expect(store.items[0].id).toBe('123');
+        expect(store.items.length).toBe(2);
+        // Newest item should be at index 0 (unshifted)
+        expect(store.items[0].id).toBe('124');
     });
 
-    it('should limit items to 15', () => {
+    it('should limit items to 15 by discarding the oldest', () => {
         for (let i = 0; i < 20; i++) {
             store.add({
                 id: i.toString(),
@@ -30,8 +42,24 @@ describe('Store', () => {
         }
 
         expect(store.items.length).toBe(15);
-        // The first 5 items should have been dropped (0, 1, 2, 3, 4)
+        // The last inserted items (19 down to 5) should be present
         expect(store.items[0].id).toBe('19'); // most recent at front
+        expect(store.items[14].id).toBe('5'); // oldest retained item
+        // Items 0-4 were discarded
+    });
+
+    it('should deduplicate by id, not content', () => {
+        // Add item
+        store.add({ id: 'abc', item_type: 'file', content: 'test', preview_path: null });
+        // Attempt duplicate id
+        store.add({ id: 'abc', item_type: 'text', content: 'diff', preview_path: null });
+        
+        expect(store.items.length).toBe(1);
+        expect(store.items[0].content).toBe('test');
+
+        // Allow duplicate content with different id
+        store.add({ id: 'def', item_type: 'file', content: 'test', preview_path: null });
+        expect(store.items.length).toBe(2);
     });
 
     it('should remove an item by id', () => {

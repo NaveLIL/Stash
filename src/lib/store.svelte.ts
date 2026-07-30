@@ -8,10 +8,12 @@ export interface DropPayload {
 
 export function createStore() {
     let items = $state<DropPayload[]>([]);
+    const MAX_ITEMS = 15;
+    let intervalId: ReturnType<typeof setInterval>;
 
     // Auto-cleanup every minute
     if (typeof window !== 'undefined') {
-        setInterval(() => {
+        intervalId = setInterval(() => {
             const now = Date.now();
             const fifteenMinutes = 15 * 60 * 1000;
             items = items.filter(item => now - item.timestamp < fifteenMinutes);
@@ -21,8 +23,14 @@ export function createStore() {
     return {
         get items() { return items; },
         add(payload: Omit<DropPayload, 'timestamp'>) {
-            if (!items.find(i => i.content === payload.content)) {
-                items.push({ ...payload, timestamp: Date.now() });
+            // Deduplicate by id, not content
+            if (!items.find(i => i.id === payload.id)) {
+                // Newest item first
+                items.unshift({ ...payload, timestamp: Date.now() });
+                // Enforce hard limit
+                if (items.length > MAX_ITEMS) {
+                    items.pop(); // Discard oldest
+                }
             }
         },
         remove(id: string) {
@@ -30,6 +38,11 @@ export function createStore() {
         },
         clearAll() {
             items = [];
+        },
+        destroy() {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
         }
     };
 }
