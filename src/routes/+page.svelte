@@ -93,26 +93,75 @@
     };
   });
   
-  async function testSendToPeer(peer: any) {
-     if (store.items.length > 0) {
-         let item = store.items[0];
-         let pin = prompt(`${t('enter_pin')} ${peer.name}`);
-         if (pin) {
-             try {
-                 await invoke('send_to_peer', { ip: peer.ip, port: peer.port, pin: pin, path: item.content });
-                 alert(t('sent_successfully'));
-             } catch(e) { alert(`${t('failed')} ` + e); }
-         }
-     } else {
-         alert(t('no_items'));
-     }
+  let dialogType = $state<'none' | 'pin' | 'alert'>('none');
+  let dialogMessage = $state('');
+  let dialogInput = $state('');
+  let dialogPeer = $state<any>(null);
+
+  async function showPinPrompt(peer: any) {
+    dialogType = 'pin';
+    dialogPeer = peer;
+    dialogInput = '';
+    dialogMessage = `${t('enter_pin_for')} ${peer.name.split('.')[0]}`;
+  }
+
+  function showAlert(msg: string) {
+    dialogType = 'alert';
+    dialogMessage = msg;
+  }
+
+  function closeDialog() {
+    dialogType = 'none';
+  }
+
+  async function submitPin() {
+    if (dialogInput && dialogPeer) {
+        const pin = dialogInput;
+        const peer = dialogPeer;
+        const item = store.items[0];
+        closeDialog();
+        try {
+            await invoke('send_to_peer', { ip: peer.ip, port: peer.port, pin: pin, path: item.content });
+            showAlert(t('sent_successfully'));
+        } catch(e) {
+            showAlert(`${t('failed')} ` + e);
+        }
+    }
+  }
+
+  async function testSendToPeer(peer: {name: string, ip: string, port: number}) {
+      if (store.items.length > 0) {
+         showPinPrompt(peer);
+      } else {
+         showAlert(t('no_items'));
+      }
   }
 </script>
 
-<div class="h-screen w-screen flex flex-col p-4 bg-transparent text-stash-text font-sans">
-  <div class="w-full h-full bg-stash-bg/80 backdrop-blur-md rounded-2xl border border-stash-border shadow-2xl p-4 flex flex-col overflow-hidden drag-region" style="--tauri-drag-region: true;">
+<div class="h-screen w-screen flex flex-col p-4 bg-transparent text-stash-text font-sans relative">
+  <div class="w-full h-full bg-stash-bg/80 backdrop-blur-md rounded-2xl border border-stash-border shadow-2xl p-4 flex flex-col overflow-hidden drag-region relative" style="--tauri-drag-region: true;">
     
-    <div class="flex justify-between items-center mb-4">
+    {#if dialogType !== 'none'}
+      <div class="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-stash-bg border border-stash-border rounded-xl shadow-2xl p-5 w-full max-w-sm flex flex-col gap-4 transform transition-all">
+          <h3 class="text-lg font-medium text-stash-text">{dialogMessage}</h3>
+          
+          {#if dialogType === 'pin'}
+            <input type="text" bind:value={dialogInput} placeholder="----" class="w-full bg-stash-card border border-stash-border rounded-md px-3 py-2 text-stash-accent font-mono text-center text-xl focus:outline-none focus:ring-2 focus:ring-stash-accent" />
+            <div class="flex gap-2 justify-end mt-2">
+              <button class="px-4 py-2 text-sm text-stash-text/70 hover:bg-stash-card rounded-md transition-colors" onclick={closeDialog}>Cancel</button>
+              <button class="px-4 py-2 text-sm bg-stash-accent text-white rounded-md hover:bg-stash-accent/80 transition-colors" onclick={submitPin}>Send</button>
+            </div>
+          {:else}
+            <div class="flex justify-end mt-2">
+              <button class="px-4 py-2 text-sm bg-stash-accent text-white rounded-md hover:bg-stash-accent/80 transition-colors" onclick={closeDialog}>OK</button>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {/if}
+
+    <div class="flex justify-between items-center mb-4 relative z-10">
       <h1 class="text-xl font-semibold text-stash-accent pointer-events-none">Stash</h1>
       <div class="flex items-center gap-2 px-2 py-1 bg-stash-card rounded-md border border-stash-border text-sm">
          <Wifi size={14} class="text-green-400" />
@@ -120,10 +169,12 @@
       </div>
     </div>
     
-    <CardList />
+    <div class="relative z-10 flex-1 overflow-hidden">
+      <CardList />
+    </div>
     
     {#if peers.length > 0}
-        <div class="mt-4 pt-4 border-t border-stash-border overflow-y-auto max-h-[30vh]">
+        <div class="mt-4 pt-4 border-t border-stash-border overflow-y-auto max-h-[30vh] relative z-10">
             <h2 class="text-xs font-semibold text-stash-text/60 mb-2 uppercase tracking-wider">{t('nearby_devices')}</h2>
             <div class="flex flex-col gap-2">
                 {#each peers as peer}

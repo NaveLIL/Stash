@@ -100,4 +100,66 @@ mod tests {
         let url = "not_a_valid_url".to_string();
         assert_eq!(clean_url(url.clone()), url);
     }
+
+    #[test]
+    fn test_generate_qr() {
+        let result = generate_qr("https://github.com/NaveLIL".to_string());
+        assert!(result.is_ok());
+        let path = result.unwrap();
+        assert!(std::path::Path::new(&path).exists());
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn test_create_zip() {
+        // Create dummy files
+        let temp_dir = std::env::temp_dir();
+        let file1 = temp_dir.join("stash_test_file1.txt");
+        let file2 = temp_dir.join("stash_test_file2.txt");
+        std::fs::write(&file1, b"Hello World 1").unwrap();
+        std::fs::write(&file2, b"Hello World 2").unwrap();
+
+        let paths = vec![
+            file1.to_string_lossy().to_string(),
+            file2.to_string_lossy().to_string()
+        ];
+        
+        let result = create_zip(paths);
+        assert!(result.is_ok());
+        let zip_path = result.unwrap();
+        assert!(std::path::Path::new(&zip_path).exists());
+        assert!(std::fs::metadata(&zip_path).unwrap().len() > 0);
+
+        std::fs::remove_file(file1).unwrap();
+        std::fs::remove_file(file2).unwrap();
+        std::fs::remove_file(zip_path).unwrap();
+    }
+
+    #[test]
+    fn test_compress_image() {
+        // Create a heavy dummy image (2000x2000)
+        let mut img = image::ImageBuffer::new(2000, 2000);
+        for (x, y, pixel) in img.enumerate_pixels_mut() {
+            let r = (0.3 * x as f32) as u8;
+            let b = (0.3 * y as f32) as u8;
+            *pixel = image::Rgb([r, 0, b]);
+        }
+        let temp_dir = std::env::temp_dir();
+        let src_path = temp_dir.join("stash_test_heavy.png");
+        img.save(&src_path).unwrap();
+
+        let original_size = std::fs::metadata(&src_path).unwrap().len();
+
+        let result = compress_image(src_path.to_string_lossy().to_string());
+        assert!(result.is_ok());
+        let compressed_path = result.unwrap();
+
+        let compressed_size = std::fs::metadata(&compressed_path).unwrap().len();
+        
+        // Assert it actually compressed
+        assert!(compressed_size < original_size);
+
+        std::fs::remove_file(src_path).unwrap();
+        std::fs::remove_file(compressed_path).unwrap();
+    }
 }

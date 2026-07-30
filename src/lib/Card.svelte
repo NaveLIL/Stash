@@ -4,14 +4,25 @@
   import { store } from './store.svelte';
   import { startDrag } from '@crabnebula/tauri-plugin-drag';
   import { Spring } from 'svelte/motion';
-  import { invoke } from '@tauri-apps/api/core';
+  import { invoke, convertFileSrc } from '@tauri-apps/api/core';
   import { t } from './i18n.svelte';
 
   let { item, index, total }: { item: DropPayload, index: number, total: number } = $props();
 
+  let imgSrc = $state('');
+
+  $effect(() => {
+    if ((item.item_type === 'image' || item.item_type === 'qr') && item.preview_path) {
+      imgSrc = convertFileSrc(item.preview_path);
+    } else {
+      imgSrc = '';
+    }
+  });
+
   async function handleDragOut(event: MouseEvent) {
     if (item.item_type === 'file' || item.item_type === 'image' || item.item_type === 'zip' || item.item_type === 'qr') {
       try {
+        // @ts-ignore: icon is marked as required by types, but passing empty string crashes on macOS/Windows
         await startDrag({
           item: [item.content]
         });
@@ -80,8 +91,11 @@
 >
   <div class="flex items-center justify-between cursor-grab active:cursor-grabbing" onmousedown={handleDragOut}>
     <div class="flex items-center gap-3 overflow-hidden">
-      <div class="p-2 bg-stash-accent/20 text-stash-accent rounded-lg shrink-0">
-        {#if item.item_type === 'file' || item.item_type === 'image' || item.item_type === 'qr'}
+      <div class="p-2 bg-stash-accent/20 text-stash-accent rounded-lg shrink-0 overflow-hidden" style="width: 36px; height: 36px; padding: {imgSrc ? '0' : '0.5rem'};">
+        {#if imgSrc}
+          <!-- svelte-ignore a11y_missing_attribute -->
+          <img src={imgSrc} class="w-full h-full object-cover" />
+        {:else if item.item_type === 'file' || item.item_type === 'image' || item.item_type === 'qr'}
           <File size={20} />
         {:else if item.item_type === 'zip'}
           <Archive size={20} />
