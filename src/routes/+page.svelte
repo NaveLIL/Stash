@@ -1,49 +1,141 @@
 <script lang="ts">
-  import { startDrag } from '@crabnebula/tauri-plugin-drag';
+  import { onMount } from 'svelte';
+  import { listen } from '@tauri-apps/api/event';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { register } from '@tauri-apps/plugin-global-shortcut';
+  import { invoke } from '@tauri-apps/api/core';
+  import CardList from '$lib/CardList.svelte';
+  import { store, type DropPayload } from '$lib/store.svelte';
+  import { Wifi, Send } from 'lucide-svelte';
 
-  let cards = $state<{id: string, text: string, type: 'file' | 'text'}[]>([
-    { id: '1', text: 'Dummy File (Drag me out)', type: 'file' }
-  ]);
+  let myPin = $state<number>(0);
+  let peers = $state<{name: string, ip: string, port: number}[]>([]);
 
-  async function handleDragOut(event: MouseEvent, card: any) {
-    if (card.type === 'file') {
-      try {
-        // Dummy file for drag out test. In reality, this would be the actual file path.
-        await startDrag({
-          item: ["/tmp/dummy.txt"],
-          icon: ""
-        });
-      } catch (e) {
-        console.error("Drag out failed", e);
+  onMount(() => {
+    const appWindow = getCurrentWindow();
+
+    const unlistenPin = listen<number>('stash://pin', (event) => {
+      myPin = event.payload;
+    });
+
+    const unlistenPeerFound = listen<{name: string, ip: string, port: number}>('stash://peer-found', (event) => {
+      if (!peers.find(p => p.name === event.payload.name)) {
+        peers.push(event.payload);
       }
-    }
+    });
+
+    const unlistenPeerLost = listen<string>('stash://peer-lost', (event) => {
+      peers = peers.filter(p => p.name !== event.payload);
+    });
+
+    // Edge Magnetism: Snap to right edge of current monitor when shown
+    const unlistenFocus = appWindow.onFocusChanged(async ({ payload: focused }) => {
+      if (focused) {
+        const monitor = await appWindow.currentMonitor();
+        if (monitor) {
+          const factor = monitor.scaleFactor;
+          const physicalSize = await appWindow.innerSize();
+          const logicalSize = physicalSize.toLogical(factor);
+          const logicalMonitorSize = monitor.size.toLogical(factor);
+          const x = logicalMonitorSize.width - logicalSize.width - 20;
+          const y = (logicalMonitorSize.height - logicalSize.height) / 2;
+          await appWindow.setLogicalPosition({ x, y });
+        }
+      }
+    });
+
+    // Global Shortcut
+    register('CommandOrControl+Shift+Space', async (e) => {
+      if (e.state === 'Pressed') {
+        const isVisible = await appWindow.isVisible();
+        if (isVisible) {
+          await appWindow.hide();
+        } else {
+          await appWindow.show();
+          await appWindow.setFocus();
+        }
+      }
+    });
+
+    const unlistenStash = listen<DropPayload>('stash://item-dropped', (event) => {
+      store.add({
+        id: event.payload.id,
+        item_type: event.payload.item_type,
+        content: event.payload.content,
+        preview_path: event.payload.preview_path,
+      });
+      appWindow.show();
+      appWindow.setFocus();
+    });
+    
+    const unlistenFileDrop = listen<{ paths: string[] }>('tauri://file-drop', (event) => {
+      event.payload.paths.forEach(path => {
+        store.add({
+          id: crypto.randomUUID(),
+          item_type: 'file',
+          content: path,
+          preview_path: path
+        });
+      });
+      appWindow.show();
+      appWindow.setFocus();
+    });
+
+    return () => {
+      unlistenStash.then(f => f());
+      unlistenFileDrop.then(f => f());
+      unlistenFocus.then(f => f());
+      unlistenPin.then(f => f());
+      unlistenPeerFound.then(f => f());
+      unlistenPeerLost.then(f => f());
+    };
+  });
+  
+  // Basic send to peer test UI
+  async function testSendToPeer(peer: any) {
+     if (store.items.length > 0) {
+         let item = store.items[0];
+         let pin = prompt(`Enter 4-digit PIN for ${peer.name}`);
+         if (pin) {
+             try {
+                 await invoke('send_to_peer', { ip: peer.ip, port: peer.port, pin: pin, path: item.content });
+                 alert("Sent successfully!");
+             } catch(e) { alert("Failed: " + e); }
+         }
+     } else {
+         alert("No items in Stash to send!");
+     }
   }
 </script>
 
 <div class="h-screen w-screen flex flex-col p-4 bg-transparent text-stash-text font-sans">
-  <div class="w-full h-full bg-stash-bg/80 backdrop-blur-md rounded-2xl border border-stash-border shadow-2xl p-4 flex flex-col">
-    <h1 class="text-xl font-semibold text-stash-accent mb-4 text-center">Stash</h1>
+  <div class="w-full h-full bg-stash-bg/80 backdrop-blur-md rounded-2xl border border-stash-border shadow-2xl p-4 flex flex-col overflow-hidden drag-region" style="--tauri-drag-region: true;">
     
-    <div class="flex-1 w-full border-2 border-dashed border-stash-border rounded-xl p-4 flex flex-col gap-3 overflow-y-auto">
-      {#if cards.length === 0}
-        <div class="flex h-full items-center justify-center text-stash-text/40">
-          Drop files here
-        </div>
-      {/if}
-
-      {#each cards as card}
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div 
-          class="bg-stash-card p-3 rounded-lg shadow-md cursor-grab active:cursor-grabbing border border-stash-border hover:border-stash-accent transition-colors flex items-center justify-between group"
-          onmousedown={(e) => handleDragOut(e, card)}
-        >
-          <span class="truncate pr-4">{card.text}</span>
-          <!-- Hover action placeholder -->
-          <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-             <button class="text-xs bg-stash-accent/20 text-stash-accent px-2 py-1 rounded hover:bg-stash-accent/40">Action</button>
-          </div>
-        </div>
-      {/each}
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-xl font-semibold text-stash-accent pointer-events-none">Stash</h1>
+      <div class="flex items-center gap-2 px-2 py-1 bg-stash-card rounded-md border border-stash-border text-sm">
+         <Wifi size={14} class="text-green-400" />
+         PIN: <span class="font-mono font-bold text-stash-accent">{myPin || '----'}</span>
+      </div>
     </div>
+    
+    <CardList />
+    
+    <!-- Peers List -->
+    {#if peers.length > 0}
+        <div class="mt-4 pt-4 border-t border-stash-border overflow-y-auto max-h-[30vh]">
+            <h2 class="text-xs font-semibold text-stash-text/60 mb-2 uppercase tracking-wider">Nearby Devices</h2>
+            <div class="flex flex-col gap-2">
+                {#each peers as peer}
+                    <div class="flex items-center justify-between bg-stash-card p-2 rounded-lg border border-stash-border">
+                        <span class="text-sm truncate">{peer.name.split('.')[0]}</span>
+                        <button class="p-1.5 bg-stash-accent/20 text-stash-accent rounded-md hover:bg-stash-accent/40 transition-colors" onclick={() => testSendToPeer(peer)} title="Send Top Item">
+                            <Send size={14} />
+                        </button>
+                    </div>
+                {/each}
+            </div>
+        </div>
+    {/if}
   </div>
 </div>

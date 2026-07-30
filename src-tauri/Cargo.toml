@@ -24,6 +24,18 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 window-vibrancy = "0.8.0"
 tauri-plugin-drag = "2.1.1"
+uuid = { version = "1.24.0", features = ["v4"] }
+tauri-plugin-global-shortcut = "2.3.2"
+image = "0.25.10"
+zip = "8.6.0"
+qrcode = "0.14.1"
+url = "2.5.8"
+mdns-sd = "0.20.3"
+axum = "0.8.9"
+reqwest = { version = "0.13.4", features = ["multipart", "stream"] }
+rand = "0.10.2"
+tokio-util = { version = "0.7.19", features = ["io"] }
+tokio = { version = "1.53.1", features = ["net", "fs"] }
 [target.'cfg(target_os = "windows")'.dependencies]
-windows = { version = "0.62.2", features = ["Win32_System_Ole", "Win32_System_Com", "Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_System_SystemServices", "Win32_System_Memory", "Win32_System_DataExchange"] }
+windows = { version = "0.62.2", features = ["Win32_System_Ole", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_System_SystemServices", "Win32_System_Memory", "Win32_System_DataExchange"] }
 
