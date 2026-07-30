@@ -83,7 +83,7 @@ describe('Store', () => {
         expect(store.items[14].id).toBe('load_9985'); // oldest retained
     });
 
-    it('should handle concurrent mix of add, remove, and clear operations', async () => {
+    it('should handle sequential stress test of mixed add, remove, and clear operations', async () => {
         const ops = [];
         for (let i = 0; i < 1000; i++) {
             ops.push(async () => {

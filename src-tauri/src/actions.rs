@@ -82,6 +82,16 @@ pub async fn generate_qr(url_str: String) -> Result<String, String> {
     Ok(out_path.to_string_lossy().to_string())
 }
 
+#[tauri::command]
+pub fn cleanup_temp_file(path: String) -> Result<(), String> {
+    let temp_dir = std::env::temp_dir();
+    let file_path = Path::new(&path);
+    if file_path.starts_with(&temp_dir) && file_path.exists() {
+        let _ = std::fs::remove_file(file_path);
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

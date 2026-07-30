@@ -49,7 +49,9 @@ pub fn run() {
                     if let Ok(hwnd) = window.hwnd() {
                         let app_handle = app.handle().clone();
                         let target = drop_target::DropTarget::new(windows::Win32::Foundation::HWND(hwnd.0 as _), app_handle);
-                        let _ = target.register();
+                        if let Err(e) = target.register() {
+                            println!("Failed to register OLE drag drop: {:?}", e);
+                        }
                     }
                 }
             }
@@ -91,7 +93,7 @@ pub fn run() {
                 .build(app)?;
             Ok(())
         })
-        .plugin(tauri_plugin_global_shortcut::Builder::new().with_shortcuts(["ctrl+shift+space"]).unwrap().build())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_drag::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -100,6 +102,7 @@ pub fn run() {
             actions::create_zip,
             actions::clean_url,
             actions::generate_qr,
+            actions::cleanup_temp_file,
             p2p::send_to_peer
         ])
         .run(tauri::generate_context!())

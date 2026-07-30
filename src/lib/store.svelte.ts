@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core';
+
 export interface DropPayload {
     id: string;
     item_type: string;
@@ -11,12 +13,26 @@ export function createStore() {
     const MAX_ITEMS = 15;
     let intervalId: ReturnType<typeof setInterval>;
 
+    function cleanupItem(item: DropPayload) {
+        if (item.item_type === 'file' || item.item_type === 'image' || item.item_type === 'zip' || item.item_type === 'qr') {
+            invoke('cleanup_temp_file', { path: item.content }).catch(console.error);
+        }
+    }
+
     // Auto-cleanup every minute
     if (typeof window !== 'undefined') {
         intervalId = setInterval(() => {
             const now = Date.now();
             const fifteenMinutes = 15 * 60 * 1000;
-            items = items.filter(item => now - item.timestamp < fifteenMinutes);
+            const kept: DropPayload[] = [];
+            for (const item of items) {
+                if (now - item.timestamp < fifteenMinutes) {
+                    kept.push(item);
+                } else {
+                    cleanupItem(item);
+                }
+            }
+            items = kept;
         }, 60000);
     }
 
@@ -29,14 +45,20 @@ export function createStore() {
                 items.unshift({ ...payload, timestamp: Date.now() });
                 // Enforce hard limit
                 if (items.length > MAX_ITEMS) {
-                    items.pop(); // Discard oldest
+                    const discarded = items.pop(); // Discard oldest
+                    if (discarded) cleanupItem(discarded);
                 }
             }
         },
         remove(id: string) {
+            const toRemove = items.find(i => i.id === id);
+            if (toRemove) cleanupItem(toRemove);
             items = items.filter(i => i.id !== id);
         },
         clearAll() {
+            for (const item of items) {
+                cleanupItem(item);
+            }
             items = [];
         },
         destroy() {

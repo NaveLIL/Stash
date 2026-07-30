@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { File, Link, Type, X, Shrink, Archive, Scissors, QrCode } from 'lucide-svelte';
+  import { File, Link, Type, X, Shrink, Archive, Scissors, QrCode, Copy } from 'lucide-svelte';
   import type { DropPayload } from './store.svelte';
   import { store } from './store.svelte';
   import { startDrag } from '@crabnebula/tauri-plugin-drag';
@@ -29,6 +29,12 @@
       } catch (e) {
         console.error("Drag out failed", e);
       }
+    }
+  }
+
+  function copyText() {
+    if (item.item_type === 'text' || item.item_type === 'url') {
+      navigator.clipboard.writeText(item.content).catch(console.error);
     }
   }
 
@@ -124,6 +130,10 @@
           <button class="p-1 text-stash-text/50 hover:text-stash-accent hover:bg-stash-accent/10 rounded-md transition-all" onclick={(e) => { e.stopPropagation(); actionQr(); }} title={t('generate_qr')}><QrCode size={16} /></button>
         {/if}
         
+        {#if item.item_type === 'text' || item.item_type === 'url'}
+          <button class="p-1 text-stash-text/50 hover:text-stash-accent hover:bg-stash-accent/10 rounded-md transition-all shrink-0" onclick={(e) => { e.stopPropagation(); copyText(); }} title={t('copy')}><Copy size={16} /></button>
+        {/if}
+
         <button 
           class="p-1 text-stash-text/50 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-all shrink-0"
           onclick={(e) => { e.stopPropagation(); removeCard(); }}

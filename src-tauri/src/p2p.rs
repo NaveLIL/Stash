@@ -106,16 +106,23 @@ fn start_mdns(port: u16, app_handle: AppHandle) {
     });
 }
 
+pub fn validate_pin(auth_header: Option<&str>, expected_pin: &str) -> bool {
+    if let Some(header) = auth_header {
+        header == format!("Bearer {}", expected_pin)
+    } else {
+        false
+    }
+}
+
 async fn handle_upload(
     State(state): State<AppState>,
     req: Request,
 ) -> Result<StatusCode, StatusCode> {
     let auth_header = req.headers().get("Authorization")
-        .and_then(|h| h.to_str().ok())
-        .ok_or(StatusCode::UNAUTHORIZED)?;
+        .and_then(|h| h.to_str().ok());
     
     let expected_pin = state.pin.load(Ordering::SeqCst).to_string();
-    if auth_header != format!("Bearer {}", expected_pin) {
+    if !validate_pin(auth_header, &expected_pin) {
         return Err(StatusCode::UNAUTHORIZED);
     }
     
@@ -173,6 +180,26 @@ pub async fn send_to_peer(ip: String, port: u16, pin: String, path: String) -> R
     }
     
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_p2p_invalid_pin() {
+        // Valid PIN
+        assert!(validate_pin(Some("Bearer 1234"), "1234"));
+        
+        // Invalid PIN
+        assert!(!validate_pin(Some("Bearer 9999"), "1234"));
+        
+        // Missing Bearer prefix
+        assert!(!validate_pin(Some("1234"), "1234"));
+        
+        // No header
+        assert!(!validate_pin(None, "1234"));
+    }
 }
 
 
