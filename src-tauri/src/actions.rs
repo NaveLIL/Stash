@@ -77,3 +77,27 @@ pub async fn generate_qr(url_str: String) -> Result<String, String> {
     
     Ok(out_path.to_string_lossy().to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_clean_url_utm_params() {
+        let url = "https://example.com/product?utm_source=test&q=search&utm_medium=email".to_string();
+        let expected = "https://example.com/product?q=search";
+        assert_eq!(clean_url(url), expected);
+    }
+
+    #[test]
+    fn test_clean_url_no_params() {
+        let url = "https://example.com/".to_string();
+        assert_eq!(clean_url(url.clone()), url);
+    }
+
+    #[test]
+    fn test_clean_url_invalid() {
+        let url = "not_a_valid_url".to_string();
+        assert_eq!(clean_url(url.clone()), url);
+    }
+}
