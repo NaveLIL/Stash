@@ -31,7 +31,7 @@ pub fn register(hwnd: HWND, app_handle: AppHandle) -> windows_core::Result<()> {
 }
 
 #[cfg(target_os = "windows")]
-impl IDropTarget_Impl for DropTarget {
+impl IDropTarget_Impl for DropTarget_Impl {
     fn DragEnter(
         &self,
         _pdataobj: windows_core::Ref<'_, IDataObject>,
