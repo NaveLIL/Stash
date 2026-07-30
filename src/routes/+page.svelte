@@ -67,17 +67,20 @@
       appWindow.setFocus();
     });
     
-    const unlistenFileDrop = listen<{ paths: string[] }>('tauri://file-drop', (event) => {
-      event.payload.paths.forEach(path => {
-        store.add({
-          id: crypto.randomUUID(),
-          item_type: 'file',
-          content: path,
-          preview_path: path
+    const unlistenFileDrop = listen<{ paths: string[] }>('tauri://drag-drop', (event) => {
+      // Windows uses OLE (stash://item-dropped). Only use Tauri's drop on macOS/Linux to avoid duplicates.
+      if (!navigator.userAgent.includes('Windows')) {
+        event.payload.paths.forEach(path => {
+          store.add({
+            id: crypto.randomUUID(),
+            item_type: 'file',
+            content: path,
+            preview_path: path
+          });
         });
-      });
-      appWindow.show();
-      appWindow.setFocus();
+        appWindow.show();
+        appWindow.setFocus();
+      }
     });
 
     return () => {

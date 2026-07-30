@@ -13,8 +13,7 @@
     if (item.item_type === 'file' || item.item_type === 'image' || item.item_type === 'zip' || item.item_type === 'qr') {
       try {
         await startDrag({
-          item: [item.content],
-          icon: ""
+          item: [item.content]
         });
       } catch (e) {
         console.error("Drag out failed", e);
