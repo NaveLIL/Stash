@@ -15,7 +15,7 @@ mod drop_target;
 #[cfg(target_os = "macos")]
 use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 #[cfg(target_os = "windows")]
-use window_vibrancy::{apply_mica, apply_acrylic, apply_blur};
+use window_vibrancy::apply_blur;
 
 use tauri::{
     menu::{Menu, MenuItem},
@@ -48,8 +48,7 @@ pub fn run() {
                     
                     if let Ok(hwnd) = window.hwnd() {
                         let app_handle = app.handle().clone();
-                        let target = drop_target::DropTarget::new(windows::Win32::Foundation::HWND(hwnd.0 as _), app_handle);
-                        if let Err(e) = target.register() {
+                        if let Err(e) = drop_target::register(windows::Win32::Foundation::HWND(hwnd.0 as _), app_handle) {
                             println!("Failed to register OLE drag drop: {:?}", e);
                         }
                     }

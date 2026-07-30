@@ -3,7 +3,6 @@ use windows::{
     core::*,
     Win32::Foundation::*,
     Win32::System::Com::*,
-    Win32::System::Com::StructuredStorage::*,
     Win32::System::Ole::*,
     Win32::System::SystemServices::*,
     Win32::System::Memory::*,
@@ -22,18 +21,12 @@ pub struct DropTarget {
 }
 
 #[cfg(target_os = "windows")]
-impl DropTarget {
-    pub fn new(hwnd: HWND, app_handle: AppHandle) -> Self {
-        Self { hwnd, app_handle }
-    }
-    
-    pub fn register(&self) -> Result<()> {
-        unsafe {
-            let _ = OleInitialize(None);
-            let target: IDropTarget = self.into();
-            RegisterDragDrop(self.hwnd, &target)?;
-            Ok(())
-        }
+pub fn register(hwnd: HWND, app_handle: AppHandle) -> windows_core::Result<()> {
+    unsafe {
+        let _ = OleInitialize(None);
+        let target: IDropTarget = DropTarget { hwnd, app_handle }.into();
+        RegisterDragDrop(hwnd, &target)?;
+        Ok(())
     }
 }
 
@@ -41,7 +34,7 @@ impl DropTarget {
 impl IDropTarget_Impl for DropTarget {
     fn DragEnter(
         &self,
-        _pdataobj: Option<&IDataObject>,
+        _pdataobj: windows_core::Ref<'_, IDataObject>,
         _grfkeystate: MODIFIERKEYS_FLAGS,
         _pt: &POINTL,
         pdweffect: *mut DROPEFFECT,
@@ -66,14 +59,14 @@ impl IDropTarget_Impl for DropTarget {
 
     fn Drop(
         &self,
-        pdataobj: Option<&IDataObject>,
+        pdataobj: windows_core::Ref<'_, IDataObject>,
         _grfkeystate: MODIFIERKEYS_FLAGS,
         _pt: &POINTL,
         pdweffect: *mut DROPEFFECT,
     ) -> Result<()> {
         unsafe { *pdweffect = DROPEFFECT_COPY; }
         
-        if let Some(data_obj) = pdataobj {
+        if let Some(data_obj) = pdataobj.as_ref() {
             let payloads = parse_data_object(data_obj);
             for payload in payloads {
                 let _ = self.app_handle.emit("stash://item-dropped", payload);
