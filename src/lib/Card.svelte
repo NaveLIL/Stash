@@ -65,8 +65,8 @@
   let zIndex = $derived(total - index);
   let opacity = $derived(1 - (index * 0.1));
 
-  let translateY = new Spring(index * 12);
-  let scale = new Spring(1 - (index * 0.05));
+  let translateY = new Spring(0);
+  let scale = new Spring(1);
 
   $effect(() => {
     translateY.target = index * 12;

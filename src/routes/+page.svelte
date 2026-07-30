@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { listen } from '@tauri-apps/api/event';
-  import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { getCurrentWindow, currentMonitor, LogicalPosition } from '@tauri-apps/api/window';
   import { register } from '@tauri-apps/plugin-global-shortcut';
   import { invoke } from '@tauri-apps/api/core';
   import CardList from '$lib/CardList.svelte';
@@ -31,7 +31,7 @@
 
     const unlistenFocus = appWindow.onFocusChanged(async ({ payload: focused }) => {
       if (focused) {
-        const monitor = await appWindow.currentMonitor();
+        const monitor = await currentMonitor();
         if (monitor) {
           const factor = monitor.scaleFactor;
           const physicalSize = await appWindow.innerSize();
@@ -39,7 +39,7 @@
           const logicalMonitorSize = monitor.size.toLogical(factor);
           const x = logicalMonitorSize.width - logicalSize.width - 20;
           const y = (logicalMonitorSize.height - logicalSize.height) / 2;
-          await appWindow.setLogicalPosition({ x, y });
+          await appWindow.setPosition(new LogicalPosition(x, y));
         }
       }
     });
