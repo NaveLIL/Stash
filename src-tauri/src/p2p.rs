@@ -175,21 +175,4 @@ pub async fn send_to_peer(ip: String, port: u16, pin: String, path: String) -> R
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use axum::body::Body;
-    use axum::http::Request as AxumRequest;
-    use tower::ServiceExt;
 
-    #[tokio::test]
-    async fn test_p2p_invalid_pin() {
-        let pin = Arc::new(AtomicUsize::new(1234));
-        let state = AppState {
-            app_handle: tauri::test::mock_app().app_handle().clone(), // We might need a mock, or we can just test handle_upload directly if we mock state
-            pin: pin.clone(),
-        };
-        // It's tricky to mock AppHandle in Tauri v2. 
-        // We will test the network behavior assuming handle_upload rejects.
-    }
-}
