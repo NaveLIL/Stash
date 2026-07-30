@@ -56,14 +56,14 @@ fn start_mdns(port: u16, app_handle: AppHandle) {
     let service_type = "_stash._tcp.local.";
     let instance_name = format!("Stash_{}", uuid::Uuid::new_v4().to_string().chars().take(4).collect::<String>());
     
-    let host_ipv4 = "0.0.0.0";
+    let host_ipv4 = local_ip_address::local_ip().map(|ip| ip.to_string()).unwrap_or_else(|_| "0.0.0.0".to_string());
     let properties = vec![("version", "1.0")];
     
     let my_service = ServiceInfo::new(
         service_type,
         &instance_name,
         &format!("{}.local.", instance_name),
-        host_ipv4,
+        &host_ipv4,
         port,
         &properties[..],
     ).unwrap();

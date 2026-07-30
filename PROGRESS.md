@@ -1,20 +1,15 @@
-# Stash Project Progress
+# Progress
 
-## Current Status
-**Phase 0 — Framework:** Completed
-**Current Phase:** Phase 1 (Pending)
+## Completed
+- **Phase 0:** Tauri v2 setup, TailwindCSS + Svelte 5 runes configured, transparent/vibrant background setup.
+- **Phase 1:** Custom Windows OLE `IDropTarget` implemented in Rust (`drop_target.rs`). Drag-IN working via custom OLE messages. Drag-OUT working via `@crabnebula/tauri-plugin-drag`.
+- **Phase 2:** Centralized state using Svelte 5 `store.svelte.ts`. Card UI (`Card.svelte`) and layout (`CardList.svelte`) with `svelte/motion` springs.
+- **Phase 3:** Global hotkey `Ctrl+Shift+Space` toggles window visibility (`tauri-plugin-global-shortcut`). Edge magnetism snapping. Auto-cleanup TTL timer (15 min) in store.
+- **Phase 4:** Quick actions in Rust (`actions.rs`) for image compression, ZIP creation, URL cleaning, and QR code generation. Hover UI inside `Card.svelte`.
+- **Phase 5:** P2P file sharing (`p2p.rs`). Uses `mdns-sd` for discovery and an `axum` HTTP server for receiving files. Authenticated via a randomly generated 4-digit PIN.
 
-## Completed Phases
+## Next Steps
+- **Windows Verification:** Wait for the GitHub Action to compile the `msi` installer. The USER must download it, install it on a Windows machine, and test the full flow (Drag and Drop, Global Shortcuts, Quick Actions, P2P).
 
-### Phase 0 — Framework
-- Initialized Tauri v2 + Svelte 5 + TS + Tailwind in the `stash` directory.
-- Configured a transparent, frameless, always-on-top window hidden from the taskbar.
-- Implemented a system tray icon with "Show" and "Quit" options.
-- Added `window-vibrancy` for native window blur effects (Acrylic/Mica on Windows, HudWindow on macOS).
-- **Known Issues:** None so far.
-
-## Next Up
-### Phase 1 — Core DnD (Critical Risk)
-- Implement Drag-OUT using `tauri-plugin-drag`.
-- Implement Drag-IN using `windows-rs` (OLE IDropTarget).
-- Verify end-to-end drag and drop functionality.
+## Known Issues
+- Currently awaiting manual testing on a real Windows machine to ensure OLE drag-and-drop parsing logic correctly captures complex Explorer memory formats.

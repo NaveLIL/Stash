@@ -36,6 +36,7 @@ reqwest = { version = "0.13.4", features = ["multipart", "stream"] }
 rand = "0.10.2"
 tokio-util = { version = "0.7.19", features = ["io"] }
 tokio = { version = "1.53.1", features = ["net", "fs"] }
+local-ip-address = "0.6.13"
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.62.2", features = ["Win32_System_Ole", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_System_SystemServices", "Win32_System_Memory", "Win32_System_DataExchange"] }
 
