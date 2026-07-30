@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-stash-bg: #1e1e2e;
+  --color-stash-card: #27273a;
+  --color-stash-border: #313244;
+  --color-stash-text: #cdd6f4;
+  --color-stash-accent: #89b4fa;
+}
+
+body {
+  background-color: transparent;
+  color: var(--color-stash-text);
+  overflow: hidden;
+  user-select: none;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
