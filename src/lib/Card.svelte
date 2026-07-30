@@ -5,6 +5,7 @@
   import { startDrag } from '@crabnebula/tauri-plugin-drag';
   import { Spring } from 'svelte/motion';
   import { invoke } from '@tauri-apps/api/core';
+  import { t } from './i18n.svelte';
 
   let { item, index, total }: { item: DropPayload, index: number, total: number } = $props();
 
@@ -100,20 +101,20 @@
     <div class="opacity-0 group-hover:opacity-100 flex gap-1 z-10 transition-opacity">
         <!-- Actions -->
         {#if item.item_type === 'image' || item.content.match(/\.(jpg|jpeg|png|webp)$/i)}
-          <button class="p-1 text-stash-text/50 hover:text-stash-accent hover:bg-stash-accent/10 rounded-md transition-all" onclick={(e) => { e.stopPropagation(); actionCompress(); }} title="Compress Image"><Shrink size={16} /></button>
+          <button class="p-1 text-stash-text/50 hover:text-stash-accent hover:bg-stash-accent/10 rounded-md transition-all" onclick={(e) => { e.stopPropagation(); actionCompress(); }} title={t('compress_image')}><Shrink size={16} /></button>
         {/if}
         {#if item.item_type === 'file' || item.item_type === 'image'}
-          <button class="p-1 text-stash-text/50 hover:text-stash-accent hover:bg-stash-accent/10 rounded-md transition-all" onclick={(e) => { e.stopPropagation(); actionZip(); }} title="Zip File"><Archive size={16} /></button>
+          <button class="p-1 text-stash-text/50 hover:text-stash-accent hover:bg-stash-accent/10 rounded-md transition-all" onclick={(e) => { e.stopPropagation(); actionZip(); }} title={t('zip_file')}><Archive size={16} /></button>
         {/if}
         {#if item.item_type === 'url'}
-          <button class="p-1 text-stash-text/50 hover:text-stash-accent hover:bg-stash-accent/10 rounded-md transition-all" onclick={(e) => { e.stopPropagation(); actionCleanUrl(); }} title="Clean URL"><Scissors size={16} /></button>
-          <button class="p-1 text-stash-text/50 hover:text-stash-accent hover:bg-stash-accent/10 rounded-md transition-all" onclick={(e) => { e.stopPropagation(); actionQr(); }} title="Generate QR"><QrCode size={16} /></button>
+          <button class="p-1 text-stash-text/50 hover:text-stash-accent hover:bg-stash-accent/10 rounded-md transition-all" onclick={(e) => { e.stopPropagation(); actionCleanUrl(); }} title={t('clean_url')}><Scissors size={16} /></button>
+          <button class="p-1 text-stash-text/50 hover:text-stash-accent hover:bg-stash-accent/10 rounded-md transition-all" onclick={(e) => { e.stopPropagation(); actionQr(); }} title={t('generate_qr')}><QrCode size={16} /></button>
         {/if}
         
         <button 
           class="p-1 text-stash-text/50 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-all shrink-0"
           onclick={(e) => { e.stopPropagation(); removeCard(); }}
-          title="Remove"
+          title={t('remove')}
         >
           <X size={16} />
         </button>

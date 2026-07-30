@@ -7,6 +7,7 @@
   import CardList from '$lib/CardList.svelte';
   import { store, type DropPayload } from '$lib/store.svelte';
   import { Wifi, Send } from 'lucide-svelte';
+  import { t } from '$lib/i18n.svelte';
 
   let myPin = $state<number>(0);
   let peers = $state<{name: string, ip: string, port: number}[]>([]);
@@ -28,7 +29,6 @@
       peers = peers.filter(p => p.name !== event.payload);
     });
 
-    // Edge Magnetism: Snap to right edge of current monitor when shown
     const unlistenFocus = appWindow.onFocusChanged(async ({ payload: focused }) => {
       if (focused) {
         const monitor = await appWindow.currentMonitor();
@@ -44,7 +44,6 @@
       }
     });
 
-    // Global Shortcut
     register('CommandOrControl+Shift+Space', async (e) => {
       if (e.state === 'Pressed') {
         const isVisible = await appWindow.isVisible();
@@ -91,19 +90,18 @@
     };
   });
   
-  // Basic send to peer test UI
   async function testSendToPeer(peer: any) {
      if (store.items.length > 0) {
          let item = store.items[0];
-         let pin = prompt(`Enter 4-digit PIN for ${peer.name}`);
+         let pin = prompt(`${t('enter_pin')} ${peer.name}`);
          if (pin) {
              try {
                  await invoke('send_to_peer', { ip: peer.ip, port: peer.port, pin: pin, path: item.content });
-                 alert("Sent successfully!");
-             } catch(e) { alert("Failed: " + e); }
+                 alert(t('sent_successfully'));
+             } catch(e) { alert(`${t('failed')} ` + e); }
          }
      } else {
-         alert("No items in Stash to send!");
+         alert(t('no_items'));
      }
   }
 </script>
@@ -115,21 +113,20 @@
       <h1 class="text-xl font-semibold text-stash-accent pointer-events-none">Stash</h1>
       <div class="flex items-center gap-2 px-2 py-1 bg-stash-card rounded-md border border-stash-border text-sm">
          <Wifi size={14} class="text-green-400" />
-         PIN: <span class="font-mono font-bold text-stash-accent">{myPin || '----'}</span>
+         {t('pin')}: <span class="font-mono font-bold text-stash-accent">{myPin || '----'}</span>
       </div>
     </div>
     
     <CardList />
     
-    <!-- Peers List -->
     {#if peers.length > 0}
         <div class="mt-4 pt-4 border-t border-stash-border overflow-y-auto max-h-[30vh]">
-            <h2 class="text-xs font-semibold text-stash-text/60 mb-2 uppercase tracking-wider">Nearby Devices</h2>
+            <h2 class="text-xs font-semibold text-stash-text/60 mb-2 uppercase tracking-wider">{t('nearby_devices')}</h2>
             <div class="flex flex-col gap-2">
                 {#each peers as peer}
                     <div class="flex items-center justify-between bg-stash-card p-2 rounded-lg border border-stash-border">
                         <span class="text-sm truncate">{peer.name.split('.')[0]}</span>
-                        <button class="p-1.5 bg-stash-accent/20 text-stash-accent rounded-md hover:bg-stash-accent/40 transition-colors" onclick={() => testSendToPeer(peer)} title="Send Top Item">
+                        <button class="p-1.5 bg-stash-accent/20 text-stash-accent rounded-md hover:bg-stash-accent/40 transition-colors" onclick={() => testSendToPeer(peer)} title={t('send_top_item')}>
                             <Send size={14} />
                         </button>
                     </div>
